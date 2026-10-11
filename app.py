@@ -10,6 +10,10 @@ def index():
     return "SecurePipeline DevSecOps Demo"
 
 
+@app.get("/health")
+def health():
+    return "Application is healthy", 200
+
 
 if __name__ == "__main__":
     # Local development only. In Docker the app is served by gunicorn (see Dockerfile).
