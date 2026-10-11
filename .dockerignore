@@ -1,0 +1,16 @@
+.git
+.gitignore
+.dockerignore
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+venv/
+.venv/
+reports/
+test_app.py
+requirements-dev.txt
+Jenkinsfile
+sonar-project.properties
+README.md
