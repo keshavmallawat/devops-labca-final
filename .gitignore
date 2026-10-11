@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Virtual environments
+venv/
+.venv/
+
+# Scanner output and caches
+reports/
+.scannerwork/
+dependency-check-data/
+
+# Secrets and local configuration
+.env
