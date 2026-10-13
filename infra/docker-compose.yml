@@ -1,0 +1,45 @@
+# Jenkins + SonarQube for SecurePipeline. Local demo environment only.
+services:
+  jenkins:
+    build: ./jenkins
+    image: securepipeline-jenkins:1
+    container_name: jenkins
+    # Root so Jenkins can use the Docker Desktop socket. This is effectively
+    # root on the Docker host: acceptable for a local lab, and worth stating in the report.
+    user: root
+    ports:
+      - "8080:8080"
+    environment:
+      # Optional but strongly recommended: free key from https://nvd.nist.gov/developers/request-an-api-key
+      - NVD_API_KEY=${NVD_API_KEY:-}
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dc_data:/opt/dependency-check-data
+      - trivy_cache:/var/cache/trivy
+    depends_on:
+      - sonarqube
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:26.9.0.129388-community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      # Skips Elasticsearch host checks (vm.max_map_count) that are awkward on Docker Desktop. Demo use only.
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_logs:/opt/sonarqube/logs
+      - sonar_extensions:/opt/sonarqube/extensions
+    stop_grace_period: 2m
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+  dc_data:
+  trivy_cache:
+  sonar_data:
+  sonar_logs:
+  sonar_extensions:
