@@ -11,7 +11,7 @@ Check the tools inside Jenkins:
     docker exec jenkins docker version
     docker exec jenkins python3 --version
 
-Jenkins:    http://localhost:8080   (first-run password: docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword)
+Jenkins:    http://localhost:8082   (first-run password: docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword)
 SonarQube:  http://localhost:9000   (first login admin / admin, you are forced to change it)
 
 Notes

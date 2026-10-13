@@ -8,7 +8,7 @@ services:
     # root on the Docker host: acceptable for a local lab, and worth stating in the report.
     user: root
     ports:
-      - "8080:8080"
+      - "8082:8080"
     environment:
       # Optional but strongly recommended: free key from https://nvd.nist.gov/developers/request-an-api-key
       - NVD_API_KEY=${NVD_API_KEY:-}
