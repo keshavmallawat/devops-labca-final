@@ -17,7 +17,17 @@ RUN curl -fsSL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY
  && tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy \
  && chmod +x /usr/local/bin/trivy \
  && rm /tmp/trivy.tar.gz
+
  
+ARG DEPENDENCY_CHECK_VERSION=12.2.2
+
+RUN curl -fsSL "https://github.com/dependency-check/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip" \
+    -o /tmp/dependency-check.zip \
+ && unzip -q /tmp/dependency-check.zip -d /opt \
+ && chmod +x /opt/dependency-check/bin/dependency-check.sh \
+ && ln -s /opt/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check \
+ && rm /tmp/dependency-check.zip
+
 USER jenkins
 
 # Minimum plugin set: pipeline, git, SonarQube integration, test reports, stage view.
