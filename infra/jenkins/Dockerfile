@@ -10,24 +10,28 @@ RUN apt-get update \
 # Docker CLI only. The daemon is Docker Desktop's, reached through the mounted socket.
 COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 
-ARG TRIVY_VERSION=0.75.0
-
-RUN curl -fsSL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-    -o /tmp/trivy.tar.gz \
- && tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy \
+ARG TRIVY_VERSION=0.74.0
+RUN cd /tmp \
+ && curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+ && curl -fsSLO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_checksums.txt" \
+ && grep " trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz\$" trivy_${TRIVY_VERSION}_checksums.txt | sha256sum -c - \
+ && tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -C /usr/local/bin trivy \
  && chmod +x /usr/local/bin/trivy \
- && rm /tmp/trivy.tar.gz
+ && rm -f /tmp/trivy_* \
+ && trivy --version
 
- 
-ARG DEPENDENCY_CHECK_VERSION=12.2.2
-
-RUN curl -fsSL "https://github.com/dependency-check/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip" \
-    -o /tmp/dependency-check.zip \
- && unzip -q /tmp/dependency-check.zip -d /opt \
+ARG DEPENDENCY_CHECK_VERSION=13.0.0
+RUN cd /tmp \
+ && curl -fsSLO "https://github.com/dependency-check/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip" \
+ && unzip -q dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip -d /opt \
  && chmod +x /opt/dependency-check/bin/dependency-check.sh \
- && ln -s /opt/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check \
- && rm /tmp/dependency-check.zip
+ && rm -f /tmp/dependency-check-*.zip \
+ && /opt/dependency-check/bin/dependency-check.sh --version
 
+ENV PATH="/opt/dependency-check/bin:${PATH}" \
+    TRIVY_CACHE_DIR=/var/cache/trivy
+RUN mkdir -p /var/cache/trivy /opt/dependency-check-data \
+ && chown -R jenkins:jenkins /var/cache/trivy /opt/dependency-check /opt/dependency-check-data
 USER jenkins
 
 # Minimum plugin set: pipeline, git, SonarQube integration, test reports, stage view.
