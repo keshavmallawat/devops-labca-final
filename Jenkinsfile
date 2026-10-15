@@ -17,6 +17,7 @@ pipeline {
         CONTAINER_NAME = 'securepipeline-demo'
         // Host port the deployed app is published on. Jenkins uses 8082 and SonarQube 9000.
         APP_HOST_PORT  = '8081'
+        SONAR_URL      = 'http://host.docker.internal:9000'
     }
 
     stages {
@@ -48,6 +49,21 @@ pipeline {
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'reports/junit.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    // The scanner runs as a sibling container that shares this container's volumes,
+                    // so it sees the workspace at the same path.
+                    sh '''
+                        docker run --rm --volumes-from jenkins -w "$WORKSPACE" \
+                            -e SONAR_HOST_URL="$SONAR_URL" -e SONAR_TOKEN="$SONAR_TOKEN" \
+                            sonarsource/sonar-scanner-cli:12.2.0.4256_8.1.0
+                        python3 scripts/fetch_sonar_status.py
+                    '''
                 }
             }
         }
