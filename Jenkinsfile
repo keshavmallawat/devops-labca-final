@@ -101,7 +101,18 @@ pipeline {
             }
         }
 
-        // The security gate is placed in front of this stage by the security work package.
+        stage('Security Gate') {
+            steps {
+                sh '''
+                    python3 scripts/security_gate.py \
+                        --sonar reports/sonar-gate.json \
+                        --dependency-check reports/dependency-check/dependency-check-report.json \
+                        --trivy reports/trivy.json
+                '''
+            }
+        }
+
+        // Runs only when every stage above, including the Security Gate, passed.
         stage('Deploy') {
             steps {
                 sh '''
