@@ -59,7 +59,7 @@ pipeline {
                     // The scanner runs as a sibling container that shares this container's volumes,
                     // so it sees the workspace at the same path.
                     sh '''
-                        docker run --rm --volumes-from jenkins -w "$WORKSPACE" \
+                           docker run --rm --user root --volumes-from jenkins -w "$WORKSPACE" \
                             -e SONAR_HOST_URL="$SONAR_URL" -e SONAR_TOKEN="$SONAR_TOKEN" \
                             sonarsource/sonar-scanner-cli:12.2.0.4256_8.1.0
                         python3 scripts/fetch_sonar_status.py
