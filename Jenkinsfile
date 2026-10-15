@@ -12,6 +12,10 @@ pipeline {
         pollSCM('* * * * *')
     }
 
+    environment {
+        IMAGE_NAME = 'securepipeline-demo'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -42,6 +46,12 @@ pipeline {
                 always {
                     junit allowEmptyResults: true, testResults: 'reports/junit.xml'
                 }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest .'
             }
         }
     }
