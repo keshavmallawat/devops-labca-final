@@ -68,6 +68,21 @@ pipeline {
             }
         }
 
+        stage('Dependency-Check') {
+            steps {
+                // Scan only the runtime requirements, not the test tooling.
+                sh '''
+                    . .venv/bin/activate
+                    pip install --quiet --target .deps -r requirements.txt
+                    mkdir -p reports/dependency-check
+                    dependency-check.sh --project securepipeline --scan .deps \
+                        --format JSON --format HTML --out reports/dependency-check \
+                        --data /opt/dependency-check-data \
+                        ${NVD_API_KEY:+--nvdApiKey "$NVD_API_KEY"}
+                '''
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 sh 'docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest .'
