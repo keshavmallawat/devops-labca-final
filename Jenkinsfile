@@ -89,6 +89,18 @@ pipeline {
             }
         }
 
+        stage('Trivy Scan') {
+            steps {
+                // Reports fixable HIGH and CRITICAL findings; the Security Gate decides pass or fail.
+                sh '''
+                    mkdir -p reports
+                    trivy image --format json --output reports/trivy.json \
+                        --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 \
+                        ${IMAGE_NAME}:${BUILD_NUMBER}
+                '''
+            }
+        }
+
         // The security gate is placed in front of this stage by the security work package.
         stage('Deploy') {
             steps {
