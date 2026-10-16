@@ -42,10 +42,8 @@ The vulnerable and fixed versions must be chosen and tested before the demo. The
 once Dependency-Check has actually flagged them in this pipeline. Record the pair here after it
 has been verified:
 
-| | Version pins | Result |
-|---|---|---|
-| Vulnerable | _to fill after verification_ | _gate fails_ |
-| Fixed | _to fill after verification_ | _gate passes_ |
+| Vulnerable | `Flask==2.2.2`, `Werkzeug==2.2.2` | gate fails: Dependency-Check flagged CVE-2023-30861, CVE-2023-25577, CVE-2023-46136, CVE-2024-34069, CVE-2024-49767 (all CVSS 7.5); Trivy also flagged 3 |
+| Fixed | `Flask==3.1.3`, `Werkzeug==3.1.9` | gate passes: Dependency-Check scanned 31 dependencies, 0 vulnerable |
 
 ## If something goes wrong
 
