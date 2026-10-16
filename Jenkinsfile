@@ -75,13 +75,15 @@ pipeline {
             steps {
                 // Scan only the runtime requirements, not the test tooling.
                 sh '''
-                    . .venv/bin/activate
-                    pip install --quiet --target .deps -r requirements.txt
-                    mkdir -p reports/dependency-check
-                    dependency-check.sh --project securepipeline --scan .deps \
-                        --format JSON --format HTML --out reports/dependency-check \
-                        --data /opt/dependency-check-data \
-                        ${NVD_API_KEY:+--nvdApiKey "$NVD_API_KEY"}
+                  . .venv/bin/activate
+rm -rf .deps
+pip install --quiet --target .deps -r requirements.txt
+mkdir -p reports/dependency-check
+dependency-check.sh --project securepipeline --scan .deps \
+    --enableExperimental \
+    --format JSON --format HTML --out reports/dependency-check \
+    --data /opt/dependency-check-data \
+    ${NVD_API_KEY:+--nvdApiKey "$NVD_API_KEY"}
                 '''
             }
         }
