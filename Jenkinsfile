@@ -17,6 +17,7 @@ pipeline {
         CONTAINER_NAME = 'securepipeline-demo'
         // Host port the deployed app is published on. Jenkins uses 8082 and SonarQube 9000.
         APP_HOST_PORT  = '8081'
+        SONAR_URL      = 'http://host.docker.internal:9000'
     }
 
     stages {
@@ -52,13 +53,71 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    // The scanner runs as a sibling container that shares this container's volumes,
+                    // so it sees the workspace at the same path.
+                    sh '''
+                        mkdir -p .scannerwork
+                        docker run --rm --user root --volumes-from jenkins -w "$WORKSPACE" \
+                            -e SONAR_HOST_URL="$SONAR_URL" -e SONAR_TOKEN="$SONAR_TOKEN" \
+                            sonarsource/sonar-scanner-cli:12.2.0.4256_8.1.0 \
+                            sonar-scanner -Dsonar.working.directory=.scannerwork \
+                            -Dsonar.scanner.metadataFilePath="$WORKSPACE/.scannerwork/report-task.txt"
+                        python3 scripts/fetch_sonar_status.py
+                    '''
+                }
+            }
+        }
+
+        stage('Dependency-Check') {
+            steps {
+                // Scan only the runtime requirements, not the test tooling.
+                sh '''
+                  . .venv/bin/activate
+rm -rf .deps
+pip install --quiet --target .deps -r requirements.txt
+mkdir -p reports/dependency-check
+dependency-check.sh --project securepipeline --scan .deps \
+    --enableExperimental \
+    --format JSON --format HTML --out reports/dependency-check \
+    --data /opt/dependency-check-data \
+    ${NVD_API_KEY:+--nvdApiKey "$NVD_API_KEY"}
+                '''
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 sh 'docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest .'
             }
         }
 
-        // The security gate is placed in front of this stage by the security work package.
+        stage('Trivy Scan') {
+            steps {
+                // Reports fixable HIGH and CRITICAL findings; the Security Gate decides pass or fail.
+                sh '''
+                    mkdir -p reports
+                    trivy image --format json --output reports/trivy.json \
+                        --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 \
+                        ${IMAGE_NAME}:${BUILD_NUMBER}
+                '''
+            }
+        }
+
+        stage('Security Gate') {
+            steps {
+                sh '''
+                    python3 scripts/security_gate.py \
+                        --sonar reports/sonar-gate.json \
+                        --dependency-check reports/dependency-check/dependency-check-report.json \
+                        --trivy reports/trivy.json
+                '''
+            }
+        }
+
+        // Runs only when every stage above, including the Security Gate, passed.
         stage('Deploy') {
             steps {
                 sh '''
