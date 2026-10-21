@@ -20,6 +20,13 @@ This document explains what each security control in the pipeline checks and whe
 3. The SonarQube quality gate status is anything other than `OK`.
 4. A report is missing or cannot be read.
 
+## Dependency-Check scan requirements
+
+- Dependency-Check's Python analyzers are experimental, so the scan runs with `--enableExperimental`. Without that flag, Python packages may not be analysed, and the scan may report no findings even when a vulnerable package is present.
+- The Dependency-Check stage deletes the `.deps` directory (`rm -rf .deps`) before running `pip install --quiet --target .deps -r requirements.txt`. Otherwise, stale package versions from a previous build could be scanned instead of the versions specified in `requirements.txt`.
+- A healthy scan should list the dependencies from `requirements.txt`. A scan that analyses almost nothing should be treated as a failed check, not a clean one.
+- The first run downloads the NVD database and needs an NVD API key. The data is cached in the `dc_data` volume, so later runs can complete much faster.
+  
 ### Why these thresholds
 
 - CVSS 7.0 is the start of the "High" range in the CVSS scale, so Medium and Low findings are reported but do not stop a deployment.
@@ -27,7 +34,12 @@ This document explains what each security control in the pipeline checks and whe
 - The SonarQube quality gate is the default gate, which fails on new bugs, vulnerabilities and hotspots that are not reviewed.
 
 ### Fail closed
-
+<box border radius="lg" padding={3} gap={2}>
+  A scanner that runs but analyses no dependencies is not proof of a safe build; check the report's dependency count.
+  <row justify="end">
+    <button variant="outline" size="sm" onClick={() => GenUI.copy("A scanner that runs but analyses no dependencies is not proof of a safe build; check the report's dependency count.")}><icon name="copy" size="xs" inline/> Copy sentence</button>
+  </row>
+</box>
 If a scanner does not run or its report cannot be read, the gate treats that as a failure. A missing check is never treated as a pass. This is the "fail closed" principle: when the pipeline cannot prove that a build is safe, it does not deploy it.
 
 ## Handling secrets
