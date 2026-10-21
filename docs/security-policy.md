@@ -30,6 +30,15 @@ This document explains what each security control in the pipeline checks and whe
 
 If a scanner does not run or its report cannot be read, the gate treats that as a failure. A missing check is never treated as a pass. This is the "fail closed" principle: when the pipeline cannot prove that a build is safe, it does not deploy it.
 
+A scanner that runs but analyses no dependencies is not proof of a safe build; check the report's dependency count.
+
+## Dependency-Check scan requirements
+
+- Dependency-Check's Python analyzers are experimental, so the scan runs with `--enableExperimental`. Without that flag, Python packages may not be analysed, and the scan may report no findings even when a vulnerable package is present.
+- The Dependency-Check stage deletes the `.deps` directory (`rm -rf .deps`) before running `pip install --quiet --target .deps -r requirements.txt`. Otherwise, stale package versions from a previous build could be scanned instead of the versions specified in `requirements.txt`.
+- A healthy scan should list the dependencies from `requirements.txt`. A scan that analyses almost nothing should be treated as a failed check, not a clean one.
+- The first run downloads the NVD database and needs an NVD API key. The data is cached in the `dc_data` volume, so later runs can complete much faster.
+
 ## Handling secrets
 
 - The SonarQube token is stored as a Jenkins "Secret text" credential with the ID `sonar-token`. It is injected with `withCredentials`, so Jenkins masks it in the logs.
